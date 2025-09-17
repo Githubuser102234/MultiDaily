@@ -39,7 +39,7 @@
             apiKey: "AIzaSyCfArLZ8sDx404wdfqT6ZPb3i9Q2Ec6xOA",
             authDomain: "multidaily-40665.firebaseapp.com",
             projectId: "multidaily-40665",
-            storageBucket: "multidaily-40665.firebasestorage.app",
+            storageBucket: "multidaily-40665.firebaseapp.com",
             messagingSenderId: "282105434725",
             appId: "1:282105434725:web:d03b8f6ed2d05dd7a0ec8c",
             measurementId: "G-ETF2Y07FRK"
@@ -102,32 +102,62 @@
 
             const tabButtons = document.querySelectorAll('.tab-btn');
             tabButtons.forEach(btn => btn.classList.remove('bg-gray-200'));
-            document.getElementById(`tab-${tabId.replace('-content', '')}`).classList.add('bg-gray-200');
+            const activeBtn = document.getElementById(`tab-${tabId.replace('-content', '')}`);
+            if (activeBtn) activeBtn.classList.add('bg-gray-200');
         };
 
         const renderContent = () => {
             const path = window.location.pathname.substring(1);
             const parts = path.split('/');
-            if (parts.length < 2 || parts[0] === '') {
-                mainContent.classList.remove('hidden');
+
+            if (!userId) {
+                 // Hide main content if not authenticated
+                mainContent.classList.add('hidden');
                 detailContent.classList.add('hidden');
-                // Ensure initial tab is active
-                showTab('notes-content');
-            } else {
+                return;
+            }
+
+            if (parts.length === 1 && parts[0] === '') {
+                // Default to notes if at root
+                navigate('/notes');
+                return;
+            }
+
+            const [base, id] = parts;
+
+            if (id) {
+                // Detail view
                 mainContent.classList.add('hidden');
                 detailContent.classList.remove('hidden');
-                const [type, id] = parts;
-                if (type && id) {
-                    renderDetailView(type, id);
-                } else {
-                    navigate('/');
+                renderDetailView(base, id);
+            } else {
+                // Tab view
+                mainContent.classList.remove('hidden');
+                detailContent.classList.add('hidden');
+                switch(base) {
+                    case 'notes':
+                        showTab('notes-content');
+                        break;
+                    case 'todos':
+                        showTab('todo-content');
+                        break;
+                    case 'habits':
+                        showTab('habits-content');
+                        break;
+                    case 'calendar':
+                        showTab('calendar-content');
+                        break;
+                    default:
+                        // Handle unknown path, redirect to notes
+                        navigate('/notes');
+                        break;
                 }
             }
         };
 
         const renderDetailView = async (type, id) => {
             if (!userId) {
-                navigate('/');
+                navigate('/notes');
                 return;
             }
 
@@ -203,7 +233,6 @@
 
                     document.getElementById('detail-form').innerHTML = formHtml;
                     
-                    // Add event listeners for the new dynamic elements
                     const saveBtn = document.getElementById('save-btn');
                     if (saveBtn) {
                         saveBtn.addEventListener('click', async () => {
@@ -220,17 +249,16 @@
                                 updateData = { text: newText };
                             }
                             await updateDoc(docRef, updateData);
-                            navigate('/');
+                            history.back(); // Use history.back() for a clean return
                         });
                     }
                     if (type === 'habit') {
                         document.querySelectorAll('.habit-day-btn').forEach(button => {
                             button.addEventListener('click', async () => {
-                                const dayIndex = parseInt(button.dataset.dayIndex, 10);
+                                const dayIndex = parseInt(button.dataset.day-index, 10);
                                 const currentHistory = [...data.history];
                                 currentHistory[dayIndex] = !currentHistory[dayIndex];
                                 await updateDoc(docRef, { history: currentHistory });
-                                // Visual feedback update
                                 button.classList.toggle('bg-blue-500');
                                 button.classList.toggle('text-white');
                                 button.classList.toggle('bg-gray-100');
@@ -281,7 +309,6 @@
                 setupHabitsListener();
                 setupEventsListener();
                 
-                // Use popstate for back/forward button navigation
                 window.addEventListener('popstate', renderContent);
                 renderContent();
             } else {
@@ -298,10 +325,10 @@
         });
 
         // Tab button event listeners
-        document.getElementById('tab-notes').addEventListener('click', () => showTab('notes-content'));
-        document.getElementById('tab-todo').addEventListener('click', () => showTab('todo-content'));
-        document.getElementById('tab-habits').addEventListener('click', () => showTab('habits-content'));
-        document.getElementById('tab-calendar').addEventListener('click', () => showTab('calendar-content'));
+        document.getElementById('tab-notes').addEventListener('click', () => navigate('/notes'));
+        document.getElementById('tab-todo').addEventListener('click', () => navigate('/todos'));
+        document.getElementById('tab-habits').addEventListener('click', () => navigate('/habits'));
+        document.getElementById('tab-calendar').addEventListener('click', () => navigate('/calendar'));
 
         // Notes App Logic with Archiving
         const setupNotesListener = () => {
@@ -320,7 +347,6 @@
                     const noteItem = document.createElement('div');
                     noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in cursor-pointer hover:bg-gray-50';
                     noteItem.addEventListener('click', (e) => {
-                        // Check if a button was clicked to prevent navigation
                         if (e.target.closest('button')) return;
                         navigate(`/note/${doc.id}`);
                     });
