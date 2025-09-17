@@ -637,9 +637,649 @@
             }
         });
 
+        // Tool App Logic
+        const renderToolView = (toolName) => {
+            const toolContent = document.getElementById('detail-content');
+            toolContent.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            let toolHtml = '';
+
+            switch (toolName) {
+                case 'calculator':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
+                            <h2 class="text-2xl font-semibold mb-4 text-center">Calculator</h2>
+                            <input type="text" id="calc-display" class="w-full text-right text-3xl font-bold p-4 bg-gray-100 rounded-lg mb-4" value="0" disabled>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button class="calc-btn bg-gray-200 p-4 rounded-lg text-xl" data-value="C">C</button>
+                                <button class="calc-btn bg-gray-200 p-4 rounded-lg text-xl" data-value="±">±</button>
+                                <button class="calc-btn bg-gray-200 p-4 rounded-lg text-xl" data-value="%">%</button>
+                                <button class="calc-btn bg-orange-400 text-white p-4 rounded-lg text-xl" data-value="/">/</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="7">7</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="8">8</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="9">9</button>
+                                <button class="calc-btn bg-orange-400 text-white p-4 rounded-lg text-xl" data-value="*">*</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="4">4</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="5">5</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="6">6</button>
+                                <button class="calc-btn bg-orange-400 text-white p-4 rounded-lg text-xl" data-value="-">-</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="1">1</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="2">2</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value="3">3</button>
+                                <button class="calc-btn bg-orange-400 text-white p-4 rounded-lg text-xl" data-value="+">+</button>
+                                <button class="calc-btn col-span-2 bg-gray-300 p-4 rounded-lg text-xl" data-value="0">0</button>
+                                <button class="calc-btn bg-gray-300 p-4 rounded-lg text-xl" data-value=".">.</button>
+                                <button class="calc-btn bg-blue-600 text-white p-4 rounded-lg text-xl" data-value="=">=</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'stopwatch':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center">
+                            <h2 class="text-2xl font-semibold mb-4">Stopwatch</h2>
+                            <div id="stopwatch-display" class="text-5xl font-bold mb-4">00:00:00</div>
+                            <div class="flex justify-center space-x-4">
+                                <button id="stopwatch-start-btn" class="bg-green-500 text-white p-3 rounded-lg shadow-sm hover:bg-green-600 transition-colors">Start</button>
+                                <button id="stopwatch-stop-btn" class="bg-red-500 text-white p-3 rounded-lg shadow-sm hover:bg-red-600 transition-colors hidden">Stop</button>
+                                <button id="stopwatch-reset-btn" class="bg-gray-500 text-white p-3 rounded-lg shadow-sm hover:bg-gray-600 transition-colors">Reset</button>
+                            </div>
+                            <div class="mt-4">
+                                <h3 class="font-semibold text-lg">Laps</h3>
+                                <ul id="stopwatch-laps" class="text-left mt-2 max-h-40 overflow-y-auto"></ul>
+                                <button id="stopwatch-lap-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors mt-2 hidden">Lap</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'timer':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center">
+                            <h2 class="text-2xl font-semibold mb-4">Timer</h2>
+                            <input type="text" id="timer-input" class="w-full text-center text-3xl font-bold p-4 bg-gray-100 rounded-lg mb-4" placeholder="MM:SS">
+                            <div id="timer-display" class="text-5xl font-bold mb-4">00:00</div>
+                            <div class="flex justify-center space-x-4">
+                                <button id="timer-start-btn" class="bg-green-500 text-white p-3 rounded-lg shadow-sm hover:bg-green-600 transition-colors">Start</button>
+                                <button id="timer-pause-btn" class="bg-yellow-500 text-white p-3 rounded-lg shadow-sm hover:bg-yellow-600 transition-colors hidden">Pause</button>
+                                <button id="timer-reset-btn" class="bg-red-500 text-white p-3 rounded-lg shadow-sm hover:bg-red-600 transition-colors">Reset</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'world-clock':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                            <h2 class="text-2xl font-semibold mb-4 text-center">World Clock</h2>
+                            <div id="world-clock-list" class="space-y-4"></div>
+                            <div class="mt-6">
+                                <h3 class="text-xl font-semibold mb-2">Add Timezone</h3>
+                                <div class="flex space-x-2">
+                                    <select id="timezone-select" class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                                    <button id="add-timezone-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'unit-converter':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                            <h2 class="text-2xl font-semibold mb-4 text-center">Unit Converter</h2>
+                            <div class="mb-4">
+                                <label for="unit-type" class="block text-sm font-medium text-gray-700 mb-1">Select Type</label>
+                                <select id="unit-type" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="length">Length</option>
+                                    <option value="weight">Weight</option>
+                                    <option value="temperature">Temperature</option>
+                                    <option value="volume">Volume</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="from-unit" class="block text-sm font-medium text-gray-700 mb-1">From</label>
+                                    <select id="from-unit" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                                </div>
+                                <div>
+                                    <label for="to-unit" class="block text-sm font-medium text-gray-700 mb-1">To</label>
+                                    <select id="to-unit" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                                </div>
+                            </div>
+                            <input type="number" id="unit-input" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" placeholder="Enter value">
+                            <div id="unit-result" class="text-xl font-bold text-center"></div>
+                        </div>
+                    `;
+                    break;
+                case 'currency-converter':
+                    toolHtml = `
+                        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                            <h2 class="text-2xl font-semibold mb-4 text-center">Currency Converter</h2>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="from-currency" class="block text-sm font-medium text-gray-700 mb-1">From</label>
+                                    <select id="from-currency" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="GBP">GBP</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="to-currency" class="block text-sm font-medium text-gray-700 mb-1">To</label>
+                                    <select id="to-currency" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="GBP">GBP</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <input type="number" id="currency-input" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" placeholder="Enter amount">
+                            <button id="convert-currency-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm w-full hover:bg-blue-700 transition-colors">Convert</button>
+                            <div id="currency-result" class="text-xl font-bold text-center mt-4"></div>
+                        </div>
+                    `;
+                    break;
+                default:
+                    toolHtml = `<p class="text-red-500 text-center">Tool not found.</p>`;
+                    break;
+            }
+
+            toolContent.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl flex flex-col items-center">
+                    <button id="back-btn" class="self-start text-gray-500 hover:text-gray-700 transition-colors mb-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    ${toolHtml}
+                </div>
+            `;
+            document.getElementById('back-btn').addEventListener('click', () => {
+                navigate('/tools');
+            });
+            setupToolLogic(toolName);
+        };
+
+        const setupToolLogic = (toolName) => {
+            switch (toolName) {
+                case 'calculator':
+                    setupCalculator();
+                    break;
+                case 'stopwatch':
+                    setupStopwatch();
+                    break;
+                case 'timer':
+                    setupTimer();
+                    break;
+                case 'world-clock':
+                    setupWorldClock();
+                    break;
+                case 'unit-converter':
+                    setupUnitConverter();
+                    break;
+                case 'currency-converter':
+                    setupCurrencyConverter();
+                    break;
+            }
+        };
+
+        const setupCalculator = () => {
+            const display = document.getElementById('calc-display');
+            let currentInput = '0';
+            let operator = null;
+            let firstOperand = null;
+            let waitingForSecondOperand = false;
+
+            const updateDisplay = () => {
+                display.value = currentInput;
+            };
+
+            const handleNumber = (digit) => {
+                if (waitingForSecondOperand) {
+                    currentInput = digit;
+                    waitingForSecondOperand = false;
+                } else {
+                    currentInput = currentInput === '0' ? digit : currentInput + digit;
+                }
+                updateDisplay();
+            };
+
+            const handleDecimal = () => {
+                if (!currentInput.includes('.')) {
+                    currentInput += '.';
+                }
+                updateDisplay();
+            };
+
+            const handleOperator = (nextOperator) => {
+                const inputValue = parseFloat(currentInput);
+
+                if (operator && waitingForSecondOperand) {
+                    operator = nextOperator;
+                    return;
+                }
+
+                if (firstOperand === null) {
+                    firstOperand = inputValue;
+                } else if (operator) {
+                    const result = performCalculation(firstOperand, inputValue, operator);
+                    currentInput = String(result);
+                    firstOperand = result;
+                }
+
+                waitingForSecondOperand = true;
+                operator = nextOperator;
+                updateDisplay();
+            };
+
+            const performCalculation = (first, second, op) => {
+                if (op === '+') return first + second;
+                if (op === '-') return first - second;
+                if (op === '*') return first * second;
+                if (op === '/') return first / second;
+                if (op === '%') return first % second;
+                return second;
+            };
+
+            const handleEquals = () => {
+                const inputValue = parseFloat(currentInput);
+                if (operator && firstOperand !== null) {
+                    const result = performCalculation(firstOperand, inputValue, operator);
+                    currentInput = String(result);
+                    firstOperand = null;
+                    operator = null;
+                    waitingForSecondOperand = false;
+                    updateDisplay();
+                }
+            };
+
+            const handleClear = () => {
+                currentInput = '0';
+                firstOperand = null;
+                operator = null;
+                waitingForSecondOperand = false;
+                updateDisplay();
+            };
+
+            const handleToggleSign = () => {
+                currentInput = (parseFloat(currentInput) * -1).toString();
+                updateDisplay();
+            };
+
+            document.querySelectorAll('.calc-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const value = button.dataset.value;
+                    if (['+', '-', '*', '/', '%'].includes(value)) {
+                        handleOperator(value);
+                    } else if (value === '=') {
+                        handleEquals();
+                    } else if (value === 'C') {
+                        handleClear();
+                    } else if (value === '±') {
+                        handleToggleSign();
+                    } else if (value === '.') {
+                        handleDecimal();
+                    } else {
+                        handleNumber(value);
+                    }
+                });
+            });
+        };
+
+        const setupStopwatch = () => {
+            const display = document.getElementById('stopwatch-display');
+            const startBtn = document.getElementById('stopwatch-start-btn');
+            const stopBtn = document.getElementById('stopwatch-stop-btn');
+            const resetBtn = document.getElementById('stopwatch-reset-btn');
+            const lapBtn = document.getElementById('stopwatch-lap-btn');
+            const lapsList = document.getElementById('stopwatch-laps');
+
+            let startTime;
+            let elapsedTime = 0;
+            let timerInterval;
+
+            const formatTime = (ms) => {
+                const totalSeconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const milliseconds = Math.floor((ms % 1000) / 10);
+                return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
+            };
+
+            const updateDisplay = () => {
+                const now = Date.now();
+                elapsedTime = now - startTime;
+                display.textContent = formatTime(elapsedTime);
+            };
+
+            const start = () => {
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(updateDisplay, 10);
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+                lapBtn.classList.remove('hidden');
+            };
+
+            const stop = () => {
+                clearInterval(timerInterval);
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+            };
+
+            const reset = () => {
+                clearInterval(timerInterval);
+                elapsedTime = 0;
+                display.textContent = formatTime(elapsedTime);
+                lapsList.innerHTML = '';
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+                lapBtn.classList.add('hidden');
+            };
+
+            const lap = () => {
+                const lapItem = document.createElement('li');
+                lapItem.className = 'border-b p-2';
+                lapItem.textContent = `Lap: ${formatTime(elapsedTime)}`;
+                lapsList.appendChild(lapItem);
+            };
+
+            startBtn.addEventListener('click', start);
+            stopBtn.addEventListener('click', stop);
+            resetBtn.addEventListener('click', reset);
+            lapBtn.addEventListener('click', lap);
+        };
+
+        const setupTimer = () => {
+            const input = document.getElementById('timer-input');
+            const display = document.getElementById('timer-display');
+            const startBtn = document.getElementById('timer-start-btn');
+            const pauseBtn = document.getElementById('timer-pause-btn');
+            const resetBtn = document.getElementById('timer-reset-btn');
+
+            let timerInterval;
+            let remainingTime;
+            let isPaused = false;
+
+            const formatTime = (seconds) => {
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            };
+
+            const startTimer = () => {
+                if (isPaused) {
+                    isPaused = false;
+                } else {
+                    const timeParts = input.value.split(':').map(Number);
+                    const minutes = timeParts.length > 1 ? timeParts[0] : 0;
+                    const seconds = timeParts.length > 1 ? timeParts[1] : timeParts[0];
+                    remainingTime = minutes * 60 + seconds;
+                    if (isNaN(remainingTime) || remainingTime <= 0) {
+                        alert("Please enter a valid time (MM:SS).");
+                        return;
+                    }
+                }
+
+                input.disabled = true;
+                startBtn.classList.add('hidden');
+                pauseBtn.classList.remove('hidden');
+
+                timerInterval = setInterval(() => {
+                    if (!isPaused) {
+                        remainingTime--;
+                        display.textContent = formatTime(remainingTime);
+                        if (remainingTime <= 0) {
+                            clearInterval(timerInterval);
+                            alert("Timer finished!");
+                            resetTimer();
+                        }
+                    }
+                }, 1000);
+            };
+
+            const pauseTimer = () => {
+                isPaused = true;
+                startBtn.classList.remove('hidden');
+                pauseBtn.classList.add('hidden');
+            };
+
+            const resetTimer = () => {
+                clearInterval(timerInterval);
+                remainingTime = null;
+                isPaused = false;
+                input.value = '';
+                input.disabled = false;
+                display.textContent = '00:00';
+                startBtn.classList.remove('hidden');
+                pauseBtn.classList.add('hidden');
+            };
+
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            resetBtn.addEventListener('click', resetTimer);
+        };
+
+        const setupWorldClock = () => {
+            const timezoneSelect = document.getElementById('timezone-select');
+            const addTimezoneBtn = document.getElementById('add-timezone-btn');
+            const clockList = document.getElementById('world-clock-list');
+            let clocks = [];
+
+            const timezones = [
+                { name: "New York", value: "America/New_York" },
+                { name: "London", value: "Europe/London" },
+                { name: "Tokyo", value: "Asia/Tokyo" },
+                { name: "Sydney", value: "Australia/Sydney" },
+                { name: "Dubai", value: "Asia/Dubai" },
+                { name: "Moscow", value: "Europe/Moscow" },
+            ];
+
+            timezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.value;
+                option.textContent = tz.name;
+                timezoneSelect.appendChild(option);
+            });
+
+            const renderClocks = () => {
+                clockList.innerHTML = '';
+                clocks.forEach((tz, index) => {
+                    const clockItem = document.createElement('div');
+                    clockItem.className = 'flex items-center justify-between bg-gray-100 p-4 rounded-lg';
+                    clockItem.innerHTML = `
+                        <div>
+                            <span class="text-lg font-semibold">${tz.name}</span>
+                            <div class="clock-display text-2xl font-bold" data-timezone="${tz.value}"></div>
+                        </div>
+                        <button class="remove-clock-btn text-red-500 hover:text-red-700 transition-colors" data-index="${index}">
+                             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586l-1.293-1.293z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    `;
+                    clockList.appendChild(clockItem);
+                });
+            };
+
+            const updateTimes = () => {
+                document.querySelectorAll('.clock-display').forEach(display => {
+                    const timezone = display.dataset.timezone;
+                    const now = new Date();
+                    const options = {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: timezone,
+                        hour12: false
+                    };
+                    display.textContent = now.toLocaleTimeString('en-US', options);
+                });
+            };
+
+            addTimezoneBtn.addEventListener('click', () => {
+                const selectedIndex = timezoneSelect.selectedIndex;
+                if (selectedIndex !== -1) {
+                    const selectedTimezone = timezones[selectedIndex];
+                    if (!clocks.some(tz => tz.value === selectedTimezone.value)) {
+                        clocks.push(selectedTimezone);
+                        renderClocks();
+                    }
+                }
+            });
+
+            clockList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.remove-clock-btn');
+                if (btn) {
+                    const index = parseInt(btn.dataset.index, 10);
+                    clocks.splice(index, 1);
+                    renderClocks();
+                }
+            });
+
+            setInterval(updateTimes, 1000);
+            renderClocks();
+        };
+
+        const setupUnitConverter = () => {
+            const unitTypeSelect = document.getElementById('unit-type');
+            const fromUnitSelect = document.getElementById('from-unit');
+            const toUnitSelect = document.getElementById('to-unit');
+            const unitInput = document.getElementById('unit-input');
+            const unitResult = document.getElementById('unit-result');
+
+            const conversions = {
+                length: {
+                    'meters': { to: { 'kilometers': 0.001, 'centimeters': 100, 'millimeters': 1000, 'miles': 0.000621371, 'yards': 1.09361, 'feet': 3.28084, 'inches': 39.3701 } },
+                    'kilometers': { to: { 'meters': 1000 } },
+                    'centimeters': { to: { 'meters': 0.01 } },
+                    'millimeters': { to: { 'meters': 0.001 } },
+                    'miles': { to: { 'meters': 1609.34 } },
+                    'yards': { to: { 'meters': 0.9144 } },
+                    'feet': { to: { 'meters': 0.3048 } },
+                    'inches': { to: { 'meters': 0.0254 } }
+                },
+                weight: {
+                    'kilograms': { to: { 'grams': 1000, 'pounds': 2.20462, 'ounces': 35.274 } },
+                    'grams': { to: { 'kilograms': 0.001 } },
+                    'pounds': { to: { 'kilograms': 0.453592 } },
+                    'ounces': { to: { 'kilograms': 0.0283495 } }
+                },
+                temperature: {
+                    'celsius': { to: { 'fahrenheit': (c) => (c * 9/5) + 32, 'kelvin': (c) => c + 273.15 } },
+                    'fahrenheit': { to: { 'celsius': (f) => (f - 32) * 5/9, 'kelvin': (f) => (f - 32) * 5/9 + 273.15 } },
+                    'kelvin': { to: { 'celsius': (k) => k - 273.15, 'fahrenheit': (k) => (k - 273.15) * 9/5 + 32 } }
+                },
+                volume: {
+                    'liters': { to: { 'milliliters': 1000, 'gallons': 0.264172, 'quarts': 1.05669 } },
+                    'milliliters': { to: { 'liters': 0.001 } },
+                    'gallons': { to: { 'liters': 3.78541 } },
+                    'quarts': { to: { 'liters': 0.946353 } }
+                }
+            };
+
+            const populateUnits = () => {
+                const selectedType = unitTypeSelect.value;
+                const units = Object.keys(conversions[selectedType]);
+                fromUnitSelect.innerHTML = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
+                toUnitSelect.innerHTML = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
+            };
+
+            const convert = () => {
+                const value = parseFloat(unitInput.value);
+                if (isNaN(value)) {
+                    unitResult.textContent = 'Invalid input';
+                    return;
+                }
+                const fromUnit = fromUnitSelect.value;
+                const toUnit = toUnitSelect.value;
+                const selectedType = unitTypeSelect.value;
+                let convertedValue;
+
+                if (fromUnit === toUnit) {
+                    convertedValue = value;
+                } else if (selectedType === 'temperature') {
+                    convertedValue = conversions[selectedType][fromUnit].to[toUnit](value);
+                } else {
+                    const baseUnit = 'meters' || 'kilograms' || 'liters';
+                    const valueInBase = value * (conversions[selectedType][fromUnit]?.to[baseUnit] || 1 / conversions[selectedType][baseUnit].to[fromUnit]);
+                    convertedValue = valueInBase * conversions[selectedType][baseUnit].to[toUnit];
+                }
+                unitResult.textContent = `${value} ${fromUnit} = ${convertedValue.toFixed(2)} ${toUnit}`;
+            };
+            
+            unitTypeSelect.addEventListener('change', () => {
+                populateUnits();
+                convert();
+            });
+            fromUnitSelect.addEventListener('change', convert);
+            toUnitSelect.addEventListener('change', convert);
+            unitInput.addEventListener('input', convert);
+
+            populateUnits();
+        };
+
+        const setupCurrencyConverter = () => {
+            const fromCurrencySelect = document.getElementById('from-currency');
+            const toCurrencySelect = document.getElementById('to-currency');
+            const currencyInput = document.getElementById('currency-input');
+            const convertBtn = document.getElementById('convert-currency-btn');
+            const currencyResult = document.getElementById('currency-result');
+
+            // Hardcoded exchange rates for demonstration purposes
+            const exchangeRates = {
+                'USD': { 'EUR': 0.93, 'JPY': 156.9, 'GBP': 0.79 },
+                'EUR': { 'USD': 1.07, 'JPY': 168.7, 'GBP': 0.85 },
+                'JPY': { 'USD': 0.0064, 'EUR': 0.0059, 'GBP': 0.0051 },
+                'GBP': { 'USD': 1.27, 'EUR': 1.18, 'JPY': 195.9 }
+            };
+
+            const convertCurrency = () => {
+                const amount = parseFloat(currencyInput.value);
+                if (isNaN(amount)) {
+                    currencyResult.textContent = 'Please enter a valid amount.';
+                    return;
+                }
+
+                const from = fromCurrencySelect.value;
+                const to = toCurrencySelect.value;
+
+                if (from === to) {
+                    currencyResult.textContent = `${amount} ${from} = ${amount} ${to}`;
+                    return;
+                }
+
+                const rate = exchangeRates[from][to];
+                const result = amount * rate;
+                currencyResult.textContent = `${amount} ${from} = ${result.toFixed(2)} ${to}`;
+            };
+
+            convertBtn.addEventListener('click', convertCurrency);
+        };
+
+        // This replaces the old renderDetailView for tools and handles the path for them
+        const handleToolNavigation = () => {
+            const path = window.location.pathname.substring(1);
+            const parts = path.split('/');
+            if (parts.length === 2 && parts[0] === 'tool') {
+                renderToolView(parts[1]);
+            } else {
+                renderContent();
+            }
+        };
+
+        // Modify the main content rendering to handle tool paths
+        const originalRenderContent = renderContent;
+        renderContent = () => {
+            const path = window.location.pathname.substring(1);
+            const parts = path.split('/');
+            if (parts[0] === 'tool' && parts.length > 1) {
+                handleToolNavigation();
+            } else {
+                originalRenderContent();
+            }
+        };
+
         // Set initial calendar view
         document.addEventListener('DOMContentLoaded', () => {
             renderCalendar();
+            renderContent();
+            window.addEventListener('popstate', renderContent);
         });
 
     </script>
