@@ -146,6 +146,12 @@
             }
         });
 
+        // Tab button event listeners
+        document.getElementById('tab-notes').addEventListener('click', () => showTab('notes-content'));
+        document.getElementById('tab-todo').addEventListener('click', () => showTab('todo-content'));
+        document.getElementById('tab-habits').addEventListener('click', () => showTab('habits-content'));
+        document.getElementById('tab-calendar').addEventListener('click', () => showTab('calendar-content'));
+
         // Notes App Logic with Archiving
         const setupNotesListener = () => {
             if (!userId) return;
@@ -489,10 +495,10 @@
         
         <!-- Tab Navigation -->
         <div class="flex bg-gray-100 rounded-full p-1 mb-6 w-full justify-around flex-wrap">
-            <button id="tab-notes" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('notes-content')">Notes</button>
-            <button id="tab-todo" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('todo-content')">To-Do List</button>
-            <button id="tab-habits" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('habits-content')">Habits</button>
-            <button id="tab-calendar" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('calendar-content')">Calendar</button>
+            <button id="tab-notes" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Notes</button>
+            <button id="tab-todo" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">To-Do List</button>
+            <button id="tab-habits" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Habits</button>
+            <button id="tab-calendar" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Calendar</button>
         </div>
 
         <!-- Notes App -->
