@@ -57,10 +57,11 @@
         let userId = null;
 
         const authButton = document.getElementById('auth-button');
-        const mainContent = document.getElementById('main-content');
         const statusText = document.getElementById('status-text');
         const loadingIndicator = document.getElementById('loading-indicator');
-        
+        const mainContent = document.getElementById('main-content');
+        const detailContent = document.getElementById('detail-content');
+
         const noteInput = document.getElementById('note-input');
         const noteAddBtn = document.getElementById('note-add-btn');
         const notesList = document.getElementById('notes-list');
@@ -89,6 +90,11 @@
         let currentDate = new Date();
         const today = new Date();
 
+        const navigate = (path) => {
+            history.pushState({}, '', path);
+            renderContent();
+        };
+
         const showTab = (tabId) => {
             const tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.classList.add('hidden'));
@@ -97,6 +103,149 @@
             const tabButtons = document.querySelectorAll('.tab-btn');
             tabButtons.forEach(btn => btn.classList.remove('bg-gray-200'));
             document.getElementById(`tab-${tabId.replace('-content', '')}`).classList.add('bg-gray-200');
+        };
+
+        const renderContent = () => {
+            const path = window.location.pathname.substring(1);
+            const parts = path.split('/');
+            if (parts.length < 2 || parts[0] === '') {
+                mainContent.classList.remove('hidden');
+                detailContent.classList.add('hidden');
+                // Ensure initial tab is active
+                showTab('notes-content');
+            } else {
+                mainContent.classList.add('hidden');
+                detailContent.classList.remove('hidden');
+                const [type, id] = parts;
+                if (type && id) {
+                    renderDetailView(type, id);
+                } else {
+                    navigate('/');
+                }
+            }
+        };
+
+        const renderDetailView = async (type, id) => {
+            if (!userId) {
+                navigate('/');
+                return;
+            }
+
+            const detailView = document.getElementById('detail-content');
+            detailView.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl flex flex-col items-center">
+                    <button id="back-btn" class="self-start text-gray-500 hover:text-gray-700 transition-colors mb-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <h2 class="text-2xl font-semibold mb-4 capitalize">${type} Details</h2>
+                    <div id="detail-form" class="w-full">
+                        <p class="text-center text-gray-500">Loading...</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('back-btn').addEventListener('click', () => {
+                history.back();
+            });
+
+            try {
+                const docRef = doc(db, `users/${userId}/${type}s`, id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    let formHtml = '';
+
+                    switch (type) {
+                        case 'note':
+                            formHtml = `
+                                <input id="edit-text-input" type="text" value="${data.text}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+                                <button id="save-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm w-full hover:bg-blue-700 transition-colors">Save Note</button>
+                            `;
+                            break;
+                        case 'todo':
+                            formHtml = `
+                                <input id="edit-text-input" type="text" value="${data.text}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+                                <div class="flex items-center mb-4">
+                                    <input type="checkbox" id="edit-completed-checkbox" class="h-4 w-4 text-blue-600 rounded mr-2" ${data.completed ? 'checked' : ''}>
+                                    <label for="edit-completed-checkbox" class="text-gray-800">Completed</label>
+                                </div>
+                                <button id="save-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm w-full hover:bg-blue-700 transition-colors">Save To-Do</button>
+                            `;
+                            break;
+                        case 'habit':
+                            formHtml = `
+                                <span class="text-xl font-semibold text-gray-800 mb-4">${data.name}</span>
+                                <div class="flex mt-2 justify-center w-full">
+                                    ${Array.from({length: 7}, (_, i) => {
+                                        const day = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][i];
+                                        const isChecked = data.history[i] || false;
+                                        return `
+                                            <button class="habit-day-btn text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}" data-day-index="${i}">
+                                                ${day}
+                                            </button>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `;
+                            break;
+                        case 'event':
+                            const eventDate = new Date(data.date.seconds * 1000).toISOString().split('T')[0];
+                            formHtml = `
+                                <input id="edit-date-input" type="date" value="${eventDate}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+                                <input id="edit-text-input" type="text" value="${data.text}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+                                <button id="save-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm w-full hover:bg-blue-700 transition-colors">Save Event</button>
+                            `;
+                            break;
+                        default:
+                            formHtml = `<p class="text-red-500">Item type not found.</p>`;
+                            break;
+                    }
+
+                    document.getElementById('detail-form').innerHTML = formHtml;
+                    
+                    // Add event listeners for the new dynamic elements
+                    const saveBtn = document.getElementById('save-btn');
+                    if (saveBtn) {
+                        saveBtn.addEventListener('click', async () => {
+                            const newText = document.getElementById('edit-text-input')?.value.trim();
+                            const newDate = document.getElementById('edit-date-input')?.value;
+                            const newCompleted = document.getElementById('edit-completed-checkbox')?.checked;
+
+                            let updateData = {};
+                            if (type === 'event') {
+                                updateData = { text: newText, date: new Date(newDate) };
+                            } else if (type === 'todo') {
+                                updateData = { text: newText, completed: newCompleted };
+                            } else {
+                                updateData = { text: newText };
+                            }
+                            await updateDoc(docRef, updateData);
+                            navigate('/');
+                        });
+                    }
+                    if (type === 'habit') {
+                        document.querySelectorAll('.habit-day-btn').forEach(button => {
+                            button.addEventListener('click', async () => {
+                                const dayIndex = parseInt(button.dataset.dayIndex, 10);
+                                const currentHistory = [...data.history];
+                                currentHistory[dayIndex] = !currentHistory[dayIndex];
+                                await updateDoc(docRef, { history: currentHistory });
+                                // Visual feedback update
+                                button.classList.toggle('bg-blue-500');
+                                button.classList.toggle('text-white');
+                                button.classList.toggle('bg-gray-100');
+                                button.classList.toggle('text-gray-800');
+                            });
+                        });
+                    }
+
+                } else {
+                    document.getElementById('detail-form').innerHTML = `<p class="text-red-500 text-center">Item not found.</p>`;
+                }
+            } catch (e) {
+                console.error("Error loading document:", e);
+                document.getElementById('detail-form').innerHTML = `<p class="text-red-500 text-center">Error loading item.</p>`;
+            }
         };
 
         // Auth logic
@@ -125,20 +274,22 @@
             if (user) {
                 userId = user.uid;
                 authButton.textContent = 'Sign Out';
-                mainContent.classList.remove('hidden');
                 statusText.textContent = `Welcome, ${user.displayName}!`;
 
-                // Set up real-time listeners for each section
                 setupNotesListener();
                 setupTodosListener();
                 setupHabitsListener();
                 setupEventsListener();
-                showTab('notes-content');
+                
+                // Use popstate for back/forward button navigation
+                window.addEventListener('popstate', renderContent);
+                renderContent();
             } else {
                 userId = null;
                 authButton.textContent = 'Sign In with Google';
-                mainContent.classList.add('hidden');
                 statusText.textContent = 'Please sign in to access your data.';
+                mainContent.classList.add('hidden');
+                detailContent.classList.add('hidden');
                 if (notesUnsub) notesUnsub();
                 if (todosUnsub) todosUnsub();
                 if (habitsUnsub) habitsUnsub();
@@ -167,9 +318,14 @@
                 snapshot.forEach(doc => {
                     const note = doc.data();
                     const noteItem = document.createElement('div');
-                    noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in';
+                    noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in cursor-pointer hover:bg-gray-50';
+                    noteItem.addEventListener('click', (e) => {
+                        // Check if a button was clicked to prevent navigation
+                        if (e.target.closest('button')) return;
+                        navigate(`/note/${doc.id}`);
+                    });
                     noteItem.innerHTML = `
-                        <span class="text-gray-800">${note.text}</span>
+                        <span class="text-gray-800 truncate">${note.text}</span>
                         <div class="flex space-x-2">
                             ${note.isArchived ? `
                                 <button class="restore-note-btn text-green-500 hover:text-green-700 transition-colors" data-id="${doc.id}">
@@ -234,9 +390,13 @@
                 snapshot.forEach(doc => {
                     const todo = doc.data();
                     const todoItem = document.createElement('div');
-                    todoItem.className = `flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in transition-opacity duration-300 ${todo.completed ? 'opacity-50' : ''}`;
+                    todoItem.className = `flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in transition-opacity duration-300 ${todo.completed ? 'opacity-50' : ''} cursor-pointer hover:bg-gray-50`;
+                    todoItem.addEventListener('click', (e) => {
+                        if (e.target.closest('button') || e.target.type === 'checkbox') return;
+                        navigate(`/todo/${doc.id}`);
+                    });
                     todoItem.innerHTML = `
-                        <div class="flex items-center">
+                        <div class="flex items-center pointer-events-none">
                             <input type="checkbox" class="todo-checkbox mr-2 h-4 w-4 text-blue-600 rounded" data-id="${doc.id}" ${todo.completed ? 'checked' : ''}>
                             <span class="text-gray-800 ${todo.completed ? 'line-through' : ''}">${todo.text}</span>
                         </div>
@@ -266,16 +426,17 @@
         });
 
         todoList.addEventListener('click', async (e) => {
-            const target = e.target;
-            const docId = target.dataset.id || target.closest('.delete-todo-btn')?.dataset.id;
+            const button = e.target.closest('button');
+            const checkbox = e.target.closest('input[type="checkbox"]');
+            const docId = (button || checkbox)?.dataset.id;
             if (!docId) return;
-            
+
             try {
-                if (target.classList.contains('todo-checkbox')) {
+                if (checkbox) {
                     await updateDoc(doc(db, `users/${userId}/todos`, docId), {
-                        completed: target.checked
+                        completed: checkbox.checked
                     });
-                } else if (target.closest('.delete-todo-btn')) {
+                } else if (button) {
                     await deleteDoc(doc(db, `users/${userId}/todos`, docId));
                 }
             } catch (e) {
@@ -293,7 +454,11 @@
                 snapshot.forEach(doc => {
                     const habit = doc.data();
                     const habitItem = document.createElement('div');
-                    habitItem.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col items-center fade-in';
+                    habitItem.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col items-center fade-in cursor-pointer hover:bg-gray-50';
+                    habitItem.addEventListener('click', (e) => {
+                        if (e.target.closest('button')) return;
+                        navigate(`/habit/${doc.id}`);
+                    });
                     habitItem.innerHTML = `
                         <div class="flex items-center justify-between w-full mb-2">
                             <span class="font-semibold text-gray-800">${habit.name}</span>
@@ -301,14 +466,14 @@
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"></path></svg>
                             </button>
                         </div>
-                        <div class="flex mt-2 justify-center w-full">
+                        <div class="flex mt-2 justify-center w-full pointer-events-none">
                             ${Array.from({length: 7}, (_, i) => {
                                 const day = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][i];
                                 const isChecked = habit.history[i] || false;
                                 return `
-                                    <button class="habit-day-btn text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}" data-habit-id="${doc.id}" data-day-index="${i}">
+                                    <span class="text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}">
                                         ${day}
-                                    </button>
+                                    </span>
                                 `;
                             }).join('')}
                         </div>
@@ -335,29 +500,13 @@
         });
 
         habitsGrid.addEventListener('click', async (e) => {
-            const target = e.target;
-            if (target.classList.contains('habit-day-btn')) {
-                const habitId = target.dataset.habitId;
-                const dayIndex = parseInt(target.dataset.dayIndex, 10);
-                try {
-                    const habitDoc = await getDoc(doc(db, `users/${userId}/habits`, habitId));
-                    if (habitDoc.exists()) {
-                        const currentHistory = habitDoc.data().history;
-                        currentHistory[dayIndex] = !currentHistory[dayIndex];
-                        await updateDoc(doc(db, `users/${userId}/habits`, habitId), {
-                            history: currentHistory
-                        });
-                    }
-                } catch (e) {
-                    console.error("Error updating habit:", e);
-                }
-            } else if (target.closest('.delete-habit-btn')) {
-                const docId = target.closest('.delete-habit-btn').dataset.id;
-                try {
-                    await deleteDoc(doc(db, `users/${userId}/habits`, docId));
-                } catch (e) {
-                    console.error("Error deleting habit:", e);
-                }
+            const button = e.target.closest('.delete-habit-btn');
+            if (!button) return;
+            const docId = button.dataset.id;
+            try {
+                await deleteDoc(doc(db, `users/${userId}/habits`, docId));
+            } catch (e) {
+                console.error("Error deleting habit:", e);
             }
         });
 
@@ -419,6 +568,10 @@
                                 eventSpan.className = 'text-xs text-gray-600 bg-gray-100 rounded-md px-1 mt-1 truncate w-full cursor-pointer hover:bg-gray-200 transition-colors';
                                 eventSpan.textContent = event.text;
                                 eventSpan.dataset.id = event.id;
+                                eventSpan.dataset.type = 'event';
+                                eventSpan.addEventListener('click', () => {
+                                    navigate(`/event/${event.id}`);
+                                });
                                 dayCell.appendChild(eventSpan);
                             });
                         }
@@ -451,19 +604,6 @@
                     eventTextInput.value = '';
                 } catch (e) {
                     console.error("Error adding event:", e);
-                }
-            }
-        });
-
-        // Delete event functionality
-        calendarGrid.addEventListener('click', async (e) => {
-            const eventSpan = e.target.closest('span[data-id]');
-            if (eventSpan) {
-                const docId = eventSpan.dataset.id;
-                try {
-                    await deleteDoc(doc(db, `users/${userId}/events`, docId));
-                } catch (e) {
-                    console.error("Error deleting event:", e);
                 }
             }
         });
@@ -581,7 +721,10 @@
                 </div>
             </div>
         </div>
-
+    </div>
+    
+    <!-- Detail View (hidden initially) -->
+    <div id="detail-content" class="hidden flex flex-col items-center p-4 w-full max-w-2xl min-h-screen">
     </div>
 
 </body>
