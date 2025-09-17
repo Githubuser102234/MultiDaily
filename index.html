@@ -488,7 +488,7 @@
     <div id="main-content" class="hidden flex flex-col items-center w-full max-w-2xl">
         
         <!-- Tab Navigation -->
-        <div class="flex bg-gray-100 rounded-full p-1 mb-6 w-full justify-around">
+        <div class="flex bg-gray-100 rounded-full p-1 mb-6 w-full justify-around flex-wrap">
             <button id="tab-notes" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('notes-content')">Notes</button>
             <button id="tab-todo" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('todo-content')">To-Do List</button>
             <button id="tab-habits" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('habits-content')">Habits</button>
@@ -499,7 +499,7 @@
         <div id="notes-content" class="tab-content w-full">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">Notes</h2>
-                <div class="flex space-x-2 mb-4">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
                     <input id="note-input" type="text" placeholder="Add a new note..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="note-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
                 </div>
@@ -519,7 +519,7 @@
         <div id="todo-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">To-Do List</h2>
-                <div class="flex space-x-2 mb-4">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
                     <input id="todo-input" type="text" placeholder="Add a new task..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="todo-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
                 </div>
@@ -533,7 +533,7 @@
         <div id="habits-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">Habit Tracker</h2>
-                <div class="flex space-x-2 mb-4">
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
                     <input id="habit-input" type="text" placeholder="Add a new habit..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="habit-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
                 </div>
