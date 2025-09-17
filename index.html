@@ -12,6 +12,13 @@
             background-color: #f3f4f6;
             color: #1f2937;
         }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
@@ -20,7 +27,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        
+        // Setting Firebase log level for debugging
+        setLogLevel('Debug');
 
         // Your web app's Firebase configuration (hardcoded as requested)
         const firebaseConfig = {
@@ -41,10 +52,8 @@
 
         const authButton = document.getElementById('auth-button');
         const mainContent = document.getElementById('main-content');
-        const notesContent = document.getElementById('notes-content');
-        const todoContent = document.getElementById('todo-content');
-        const habitsContent = document.getElementById('habits-content');
         const statusText = document.getElementById('status-text');
+        const loadingIndicator = document.getElementById('loading-indicator');
         
         const noteInput = document.getElementById('note-input');
         const noteAddBtn = document.getElementById('note-add-btn');
@@ -75,10 +84,21 @@
         // Auth logic
         authButton.addEventListener('click', async () => {
             if (auth.currentUser) {
-                await signOut(auth);
+                try {
+                    await signOut(auth);
+                } catch (e) {
+                    console.error("Error signing out:", e);
+                }
             } else {
-                const provider = new GoogleAuthProvider();
-                await signInWithPopup(auth, provider);
+                loadingIndicator.classList.remove('hidden');
+                try {
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                } catch (e) {
+                    console.error("Error signing in:", e);
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                }
             }
         });
 
@@ -114,7 +134,7 @@
                 snapshot.forEach(doc => {
                     const note = doc.data();
                     const noteItem = document.createElement('div');
-                    noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2';
+                    noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in';
                     noteItem.innerHTML = `
                         <span class="text-gray-800">${note.text}</span>
                         <button class="delete-note-btn text-red-500 hover:text-red-700 transition-colors" data-id="${doc.id}">
@@ -129,18 +149,27 @@
         noteAddBtn.addEventListener('click', async () => {
             const noteText = noteInput.value.trim();
             if (noteText && userId) {
-                await addDoc(collection(db, `users/${userId}/notes`), {
-                    text: noteText,
-                    createdAt: new Date()
-                });
-                noteInput.value = '';
+                try {
+                    await addDoc(collection(db, `users/${userId}/notes`), {
+                        text: noteText,
+                        createdAt: new Date()
+                    });
+                    noteInput.value = '';
+                } catch (e) {
+                    console.error("Error adding note:", e);
+                }
             }
         });
 
         notesList.addEventListener('click', async (e) => {
-            if (e.target.closest('.delete-note-btn')) {
-                const docId = e.target.closest('.delete-note-btn').dataset.id;
-                await deleteDoc(doc(db, `users/${userId}/notes`, docId));
+            const button = e.target.closest('.delete-note-btn');
+            if (button) {
+                const docId = button.dataset.id;
+                try {
+                    await deleteDoc(doc(db, `users/${userId}/notes`, docId));
+                } catch (e) {
+                    console.error("Error deleting note:", e);
+                }
             }
         });
 
@@ -153,7 +182,7 @@
                 snapshot.forEach(doc => {
                     const todo = doc.data();
                     const todoItem = document.createElement('div');
-                    todoItem.className = `flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 transition-opacity duration-300 ${todo.completed ? 'opacity-50' : ''}`;
+                    todoItem.className = `flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 fade-in transition-opacity duration-300 ${todo.completed ? 'opacity-50' : ''}`;
                     todoItem.innerHTML = `
                         <div class="flex items-center">
                             <input type="checkbox" class="todo-checkbox mr-2 h-4 w-4 text-blue-600 rounded" data-id="${doc.id}" ${todo.completed ? 'checked' : ''}>
@@ -171,25 +200,34 @@
         todoAddBtn.addEventListener('click', async () => {
             const todoText = todoInput.value.trim();
             if (todoText && userId) {
-                await addDoc(collection(db, `users/${userId}/todos`), {
-                    text: todoText,
-                    completed: false,
-                    createdAt: new Date()
-                });
-                todoInput.value = '';
+                try {
+                    await addDoc(collection(db, `users/${userId}/todos`), {
+                        text: todoText,
+                        completed: false,
+                        createdAt: new Date()
+                    });
+                    todoInput.value = '';
+                } catch (e) {
+                    console.error("Error adding todo:", e);
+                }
             }
         });
 
         todoList.addEventListener('click', async (e) => {
             const target = e.target;
-            if (target.classList.contains('todo-checkbox')) {
-                const docId = target.dataset.id;
-                await updateDoc(doc(db, `users/${userId}/todos`, docId), {
-                    completed: target.checked
-                });
-            } else if (target.closest('.delete-todo-btn')) {
-                const docId = target.closest('.delete-todo-btn').dataset.id;
-                await deleteDoc(doc(db, `users/${userId}/todos`, docId));
+            const docId = target.dataset.id || target.closest('.delete-todo-btn')?.dataset.id;
+            if (!docId) return;
+            
+            try {
+                if (target.classList.contains('todo-checkbox')) {
+                    await updateDoc(doc(db, `users/${userId}/todos`, docId), {
+                        completed: target.checked
+                    });
+                } else if (target.closest('.delete-todo-btn')) {
+                    await deleteDoc(doc(db, `users/${userId}/todos`, docId));
+                }
+            } catch (e) {
+                console.error("Error updating/deleting todo:", e);
             }
         });
 
@@ -202,7 +240,7 @@
                 snapshot.forEach(doc => {
                     const habit = doc.data();
                     const habitItem = document.createElement('div');
-                    habitItem.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col items-center';
+                    habitItem.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col items-center fade-in';
                     habitItem.innerHTML = `
                         <div class="flex items-center justify-between w-full mb-2">
                             <span class="font-semibold text-gray-800">${habit.name}</span>
@@ -215,7 +253,7 @@
                                 const day = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][i];
                                 const isChecked = habit.history[i] || false;
                                 return `
-                                    <button class="habit-day-btn text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'}" data-habit-id="${doc.id}" data-day-index="${i}">
+                                    <button class="habit-day-btn text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}" data-habit-id="${doc.id}" data-day-index="${i}">
                                         ${day}
                                     </button>
                                 `;
@@ -230,12 +268,16 @@
         habitAddBtn.addEventListener('click', async () => {
             const habitName = habitInput.value.trim();
             if (habitName && userId) {
-                await addDoc(collection(db, `users/${userId}/habits`), {
-                    name: habitName,
-                    history: [false, false, false, false, false, false, false],
-                    createdAt: new Date()
-                });
-                habitInput.value = '';
+                try {
+                    await addDoc(collection(db, `users/${userId}/habits`), {
+                        name: habitName,
+                        history: [false, false, false, false, false, false, false],
+                        createdAt: new Date()
+                    });
+                    habitInput.value = '';
+                } catch (e) {
+                    console.error("Error adding habit:", e);
+                }
             }
         });
 
@@ -244,17 +286,25 @@
             if (target.classList.contains('habit-day-btn')) {
                 const habitId = target.dataset.habitId;
                 const dayIndex = parseInt(target.dataset.dayIndex, 10);
-                const habitDoc = await getDoc(doc(db, `users/${userId}/habits`, habitId));
-                if (habitDoc.exists()) {
-                    const currentHistory = habitDoc.data().history;
-                    currentHistory[dayIndex] = !currentHistory[dayIndex];
-                    await updateDoc(doc(db, `users/${userId}/habits`, habitId), {
-                        history: currentHistory
-                    });
+                try {
+                    const habitDoc = await getDoc(doc(db, `users/${userId}/habits`, habitId));
+                    if (habitDoc.exists()) {
+                        const currentHistory = habitDoc.data().history;
+                        currentHistory[dayIndex] = !currentHistory[dayIndex];
+                        await updateDoc(doc(db, `users/${userId}/habits`, habitId), {
+                            history: currentHistory
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error updating habit:", e);
                 }
             } else if (target.closest('.delete-habit-btn')) {
                 const docId = target.closest('.delete-habit-btn').dataset.id;
-                await deleteDoc(doc(db, `users/${userId}/habits`, docId));
+                try {
+                    await deleteDoc(doc(db, `users/${userId}/habits`, docId));
+                } catch (e) {
+                    console.error("Error deleting habit:", e);
+                }
             }
         });
     </script>
@@ -266,6 +316,12 @@
         <button id="auth-button" class="bg-blue-600 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-md hover:bg-blue-700 transition-colors">
             Sign In with Google
         </button>
+        <div id="loading-indicator" class="hidden mt-4">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
     </div>
 
     <!-- Main App Content (hidden until logged in) -->
