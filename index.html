@@ -32,6 +32,7 @@
         
         // Setting Firebase log level for debugging
         setLogLevel('Debug');
+        console.log("Starting Firebase SDK initialization...");
 
         // Your web app's Firebase configuration (hardcoded as requested)
         const firebaseConfig = {
@@ -45,9 +46,14 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        console.log("Firebase App initialized:", app);
         
+        const auth = getAuth(app);
+        console.log("Firebase Auth initialized.");
+
+        const db = getFirestore(app);
+        console.log("Firebase Firestore initialized.");
+
         let userId = null;
 
         const authButton = document.getElementById('auth-button');
@@ -66,7 +72,7 @@
 
         const habitsGrid = document.getElementById('habits-grid');
         const habitInput = document.getElementById('habit-input');
-        const habitAddBtn = document = document.getElementById('habit-add-btn');
+        const habitAddBtn = document.getElementById('habit-add-btn');
 
         const calendarNav = document.getElementById('calendar-nav');
         const calendarGrid = document.getElementById('calendar-grid');
@@ -115,6 +121,7 @@
         });
 
         onAuthStateChanged(auth, (user) => {
+            console.log("Auth state changed:", user ? "User logged in" : "User logged out");
             if (user) {
                 userId = user.uid;
                 authButton.textContent = 'Sign Out';
