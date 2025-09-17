@@ -60,10 +60,6 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         const mainContent = document.getElementById('main-content');
         const detailContent = document.getElementById('detail-content');
-        
-        const toolsTabContent = document.getElementById('tools-tab-content'); // Renamed to avoid conflict
-        const toolTitle = document.getElementById('tool-title');
-        const toolFrame = document.getElementById('tool-frame');
 
         const noteInput = document.getElementById('note-input');
         const noteAddBtn = document.getElementById('note-add-btn');
@@ -117,7 +113,6 @@
                  // Hide main content if not authenticated
                 mainContent.classList.add('hidden');
                 detailContent.classList.add('hidden');
-                toolsTabContent.classList.add('hidden');
                 return;
             }
 
@@ -130,20 +125,14 @@
             const [base, id] = parts;
 
             if (id) {
-                // Detail view or Tool view
+                // Detail view
                 mainContent.classList.add('hidden');
-                detailContent.classList.add('hidden');
-                toolsTabContent.classList.add('hidden');
-                if (base === 'tool') {
-                    renderToolView(id);
-                } else {
-                    renderDetailView(base, id);
-                }
+                detailContent.classList.remove('hidden');
+                renderDetailView(base, id);
             } else {
                 // Tab view
                 mainContent.classList.remove('hidden');
                 detailContent.classList.add('hidden');
-                toolsTabContent.classList.add('hidden');
                 switch(base) {
                     case 'notes':
                         showTab('notes-content');
@@ -159,7 +148,6 @@
                         break;
                     case 'tools':
                         showTab('tools-content');
-                        toolsTabContent.classList.remove('hidden'); // Show the tools container
                         break;
                     default:
                         // Handle unknown path, redirect to notes
@@ -167,40 +155,6 @@
                         break;
                 }
             }
-        };
-        
-        const renderToolView = (toolName) => {
-            const toolDisplay = {
-                calculator: {
-                    title: 'Calculator',
-                    url: 'https://www.google.com/search?q=calculator&igu=1&piv=1'
-                },
-                stopwatch: {
-                    title: 'Stopwatch',
-                    url: 'https://www.google.com/search?q=stopwatch&igu=1&piv=1'
-                },
-                timer: {
-                    title: 'Timer',
-                    url: 'https://www.google.com/search?q=timer&igu=1&piv=1'
-                },
-                converter: {
-                    title: 'Unit Converter',
-                    url: 'https://www.google.com/search?q=unit+converter&igu=1&piv=1'
-                },
-            };
-
-            const tool = toolDisplay[toolName];
-            if (tool) {
-                toolTitle.textContent = tool.title;
-                toolFrame.src = tool.url;
-            } else {
-                toolTitle.textContent = 'Tool Not Found';
-                toolFrame.src = 'about:blank';
-            }
-            
-            detailContent.classList.add('hidden');
-            mainContent.classList.add('hidden');
-            toolsTabContent.classList.remove('hidden');
         };
 
         const renderDetailView = async (type, id) => {
@@ -365,7 +319,6 @@
                 statusText.textContent = 'Please sign in to access your data.';
                 mainContent.classList.add('hidden');
                 detailContent.classList.add('hidden');
-                toolsTabContent.classList.add('hidden');
                 if (notesUnsub) notesUnsub();
                 if (todosUnsub) todosUnsub();
                 if (habitsUnsub) habitsUnsub();
@@ -379,12 +332,6 @@
         document.getElementById('tab-habits').addEventListener('click', () => navigate('/habits'));
         document.getElementById('tab-calendar').addEventListener('click', () => navigate('/calendar'));
         document.getElementById('tab-tools').addEventListener('click', () => navigate('/tools'));
-        
-        // Tool link event listeners
-        document.getElementById('link-calculator').addEventListener('click', (e) => { e.preventDefault(); navigate('/tool/calculator'); });
-        document.getElementById('link-stopwatch').addEventListener('click', (e) => { e.preventDefault(); navigate('/tool/stopwatch'); });
-        document.getElementById('link-timer').addEventListener('click', (e) => { e.preventDefault(); navigate('/tool/timer'); });
-        document.getElementById('link-converter').addEventListener('click', (e) => { e.preventDefault(); navigate('/tool/converter'); });
 
         // Notes App Logic with Archiving
         const setupNotesListener = () => {
@@ -693,10 +640,6 @@
         // Set initial calendar view
         document.addEventListener('DOMContentLoaded', () => {
             renderCalendar();
-            // Handle the back button for tools specifically
-            document.getElementById('tool-back-btn').addEventListener('click', () => {
-                navigate('/tools');
-            });
         });
 
     </script>
@@ -797,25 +740,14 @@
 
         <div id="tools-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
-                <h2 class="text-2xl font-semibold mb-4 text-center">Tools</h2>
-                <p class="text-center text-gray-600 mb-6">Access quick, everyday tools to help with your tasks.</p>
-                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <a id="link-calculator" href="/tool/calculator" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
-                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z"></path></svg>
-                        <span class="font-medium text-gray-800">Calculator</span>
-                    </a>
-                    <a id="link-stopwatch" href="/tool/stopwatch" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
-                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                        <span class="font-medium text-gray-800">Stopwatch</span>
-                    </a>
-                    <a id="link-timer" href="/tool/timer" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
-                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                        <span class="font-medium text-gray-800">Timer</span>
-                    </a>
-                    <a id="link-converter" href="/tool/converter" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
-                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM7 9a1 1 0 011-1h4a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
-                        <span class="font-medium text-gray-800">Converter</span>
-                    </a>
+                <h2 class="text-2xl font-semibold mb-4 text-center">Daily Tools</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <a href="/tool/calculator" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">Calculator</a>
+                    <a href="/tool/stopwatch" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">Stopwatch</a>
+                    <a href="/tool/timer" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">Timer</a>
+                    <a href="/tool/world-clock" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">World Clock</a>
+                    <a href="/tool/unit-converter" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">Unit Converter</a>
+                    <a href="/tool/currency-converter" class="bg-gray-100 p-4 rounded-lg shadow-sm hover:bg-gray-200 transition-colors text-center font-medium">Currency Converter</a>
                 </div>
             </div>
         </div>
@@ -824,15 +756,6 @@
     
     <div id="detail-content" class="hidden flex flex-col items-center p-4 w-full max-w-2xl min-h-screen">
     </div>
-    
-    <div id="tools-tab-content" class="hidden flex flex-col items-center p-4 w-full max-w-2xl min-h-screen">
-        <div class="bg-white rounded-xl shadow-lg p-6 w-full h-full flex flex-col items-center">
-            <button id="tool-back-btn" class="self-start text-gray-500 hover:text-gray-700 transition-colors mb-4">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-            </button>
-            <h2 id="tool-title" class="text-2xl font-semibold mb-4 text-center"></h2>
-            <iframe id="tool-frame" class="w-full h-[600px] border-none rounded-lg" src=""></iframe>
-        </div>
-    </div>
+
 </body>
 </html>
