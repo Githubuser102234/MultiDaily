@@ -23,7 +23,6 @@
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -61,6 +60,10 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         const mainContent = document.getElementById('main-content');
         const detailContent = document.getElementById('detail-content');
+        
+        const toolContent = document.getElementById('tools-content');
+        const toolTitle = document.getElementById('tool-title');
+        const toolFrame = document.getElementById('tool-frame');
 
         const noteInput = document.getElementById('note-input');
         const noteAddBtn = document.getElementById('note-add-btn');
@@ -126,14 +129,20 @@
             const [base, id] = parts;
 
             if (id) {
-                // Detail view
+                // Detail view or Tool view
                 mainContent.classList.add('hidden');
                 detailContent.classList.remove('hidden');
-                renderDetailView(base, id);
+                toolContent.classList.add('hidden');
+                if (base === 'tool') {
+                    renderToolView(id);
+                } else {
+                    renderDetailView(base, id);
+                }
             } else {
                 // Tab view
                 mainContent.classList.remove('hidden');
                 detailContent.classList.add('hidden');
+                toolContent.classList.add('hidden');
                 switch(base) {
                     case 'notes':
                         showTab('notes-content');
@@ -147,12 +156,50 @@
                     case 'calendar':
                         showTab('calendar-content');
                         break;
+                    case 'tools':
+                        showTab('tools-content');
+                        toolContent.classList.remove('hidden');
+                        break;
                     default:
                         // Handle unknown path, redirect to notes
                         navigate('/notes');
                         break;
                 }
             }
+        };
+        
+        const renderToolView = (toolName) => {
+            const toolDisplay = {
+                calculator: {
+                    title: 'Calculator',
+                    url: 'https://www.google.com/search?q=calculator&igu=1&piv=1'
+                },
+                stopwatch: {
+                    title: 'Stopwatch',
+                    url: 'https://www.google.com/search?q=stopwatch&igu=1&piv=1'
+                },
+                timer: {
+                    title: 'Timer',
+                    url: 'https://www.google.com/search?q=timer&igu=1&piv=1'
+                },
+                converter: {
+                    title: 'Unit Converter',
+                    url: 'https://www.google.com/search?q=unit+converter&igu=1&piv=1'
+                },
+            };
+
+            const tool = toolDisplay[toolName];
+            if (tool) {
+                toolTitle.textContent = tool.title;
+                toolFrame.src = tool.url;
+            } else {
+                toolTitle.textContent = 'Tool Not Found';
+                toolFrame.src = 'about:blank';
+            }
+            
+            detailContent.classList.add('hidden');
+            mainContent.classList.add('hidden');
+            toolContent.classList.remove('hidden');
         };
 
         const renderDetailView = async (type, id) => {
@@ -317,6 +364,7 @@
                 statusText.textContent = 'Please sign in to access your data.';
                 mainContent.classList.add('hidden');
                 detailContent.classList.add('hidden');
+                toolContent.classList.add('hidden');
                 if (notesUnsub) notesUnsub();
                 if (todosUnsub) todosUnsub();
                 if (habitsUnsub) habitsUnsub();
@@ -329,6 +377,13 @@
         document.getElementById('tab-todo').addEventListener('click', () => navigate('/todos'));
         document.getElementById('tab-habits').addEventListener('click', () => navigate('/habits'));
         document.getElementById('tab-calendar').addEventListener('click', () => navigate('/calendar'));
+        document.getElementById('tab-tools').addEventListener('click', () => navigate('/tools'));
+        
+        // Tool link event listeners
+        document.getElementById('link-calculator').addEventListener('click', () => navigate('/tool/calculator'));
+        document.getElementById('link-stopwatch').addEventListener('click', () => navigate('/tool/stopwatch'));
+        document.getElementById('link-timer').addEventListener('click', () => navigate('/tool/timer'));
+        document.getElementById('link-converter').addEventListener('click', () => navigate('/tool/converter'));
 
         // Notes App Logic with Archiving
         const setupNotesListener = () => {
@@ -641,7 +696,6 @@
 
     </script>
 
-    <!-- UI Elements -->
     <div class="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-lg w-full max-w-2xl mb-6">
         <h1 class="text-3xl font-bold mb-4 text-center text-gray-800">Daily Organizer</h1>
         <p id="status-text" class="text-gray-600 mb-6 text-center">Please sign in to access your data.</p>
@@ -656,18 +710,16 @@
         </div>
     </div>
 
-    <!-- Main App Content (hidden until logged in) -->
     <div id="main-content" class="hidden flex flex-col items-center w-full max-w-2xl">
         
-        <!-- Tab Navigation -->
         <div class="flex bg-gray-100 rounded-full p-1 mb-6 w-full justify-around flex-wrap">
             <button id="tab-notes" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Notes</button>
             <button id="tab-todo" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">To-Do List</button>
             <button id="tab-habits" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Habits</button>
             <button id="tab-calendar" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Calendar</button>
+            <button id="tab-tools" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Tools</button>
         </div>
 
-        <!-- Notes App -->
         <div id="notes-content" class="tab-content w-full">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">Notes</h2>
@@ -682,12 +734,10 @@
                     </label>
                 </div>
                 <div id="notes-list" class="space-y-2">
-                    <!-- Notes will be dynamically loaded here -->
-                </div>
+                    </div>
             </div>
         </div>
 
-        <!-- To-Do App -->
         <div id="todo-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">To-Do List</h2>
@@ -696,12 +746,10 @@
                     <button id="todo-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
                 </div>
                 <div id="todo-list" class="space-y-2">
-                    <!-- To-dos will be dynamically loaded here -->
-                </div>
+                    </div>
             </div>
         </div>
 
-        <!-- Habits App -->
         <div id="habits-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">Habit Tracker</h2>
@@ -710,16 +758,13 @@
                     <button id="habit-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
                 </div>
                 <div id="habits-grid" class="space-y-4">
-                    <!-- Habits will be dynamically loaded here -->
-                </div>
+                    </div>
             </div>
         </div>
 
-        <!-- Calendar App -->
         <div id="calendar-content" class="tab-content w-full hidden">
             <div class="bg-white rounded-xl shadow-lg p-6 w-full">
                 <h2 class="text-2xl font-semibold mb-4 text-center">Calendar</h2>
-                <!-- Calendar Navigation -->
                 <div id="calendar-nav" class="flex items-center justify-between mb-4">
                     <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
                         <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
@@ -729,14 +774,11 @@
                         <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
                     </button>
                 </div>
-                <!-- Calendar Grid -->
                 <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-600 mb-4">
                     <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
                 </div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-2">
-                    <!-- Calendar days and events will be dynamically generated here -->
-                </div>
-                <!-- Add Event Form -->
+                    </div>
                 <div class="mt-6 border-t pt-4">
                     <h3 class="text-xl font-semibold mb-3">Add New Event</h3>
                     <div class="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
@@ -747,11 +789,52 @@
                 </div>
             </div>
         </div>
+
+        <div id="tools-content" class="tab-content w-full hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Tools</h2>
+                <p class="text-center text-gray-600 mb-6">Access quick, everyday tools to help with your tasks.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <a id="link-calculator" href="/tool/calculator" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
+                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z"></path></svg>
+                        <span class="font-medium text-gray-800">Calculator</span>
+                    </a>
+                    <a id="link-stopwatch" href="/tool/stopwatch" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
+                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800">Stopwatch</span>
+                    </a>
+                    <a id="link-timer" href="/tool/timer" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
+                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800">Timer</span>
+                    </a>
+                    <a id="link-converter" href="/tool/converter" class="bg-gray-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center hover:bg-gray-200 transition-colors">
+                        <svg class="w-8 h-8 text-blue-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM7 9a1 1 0 011-1h4a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800">Converter</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
     </div>
     
-    <!-- Detail View (hidden initially) -->
     <div id="detail-content" class="hidden flex flex-col items-center p-4 w-full max-w-2xl min-h-screen">
     </div>
+    
+    <div id="tools-content" class="hidden flex flex-col items-center p-4 w-full max-w-2xl min-h-screen">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full h-full flex flex-col items-center">
+            <button id="tool-back-btn" class="self-start text-gray-500 hover:text-gray-700 transition-colors mb-4">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+            </button>
+            <h2 id="tool-title" class="text-2xl font-semibold mb-4 text-center"></h2>
+            <iframe id="tool-frame" class="w-full h-[600px] border-none rounded-lg" src=""></iframe>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('tool-back-btn').addEventListener('click', () => {
+            navigate('/tools');
+        });
+    </script>
 
 </body>
 </html>
