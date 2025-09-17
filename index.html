@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Organizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration (hardcoded as requested)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfArLZ8sDx404wdfqT6ZPb3i9Q2Ec6xOA",
+            authDomain: "multidaily-40665.firebaseapp.com",
+            projectId: "multidaily-40665",
+            storageBucket: "multidaily-40665.firebasestorage.app",
+            messagingSenderId: "282105434725",
+            appId: "1:282105434725:web:d03b8f6ed2d05dd7a0ec8c",
+            measurementId: "G-ETF2Y07FRK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let userId = null;
+
+        const authButton = document.getElementById('auth-button');
+        const mainContent = document.getElementById('main-content');
+        const notesContent = document.getElementById('notes-content');
+        const todoContent = document.getElementById('todo-content');
+        const habitsContent = document.getElementById('habits-content');
+        const statusText = document.getElementById('status-text');
+        
+        const noteInput = document.getElementById('note-input');
+        const noteAddBtn = document.getElementById('note-add-btn');
+        const notesList = document.getElementById('notes-list');
+
+        const todoInput = document.getElementById('todo-input');
+        const todoAddBtn = document.getElementById('todo-add-btn');
+        const todoList = document.getElementById('todo-list');
+
+        const habitsGrid = document.getElementById('habits-grid');
+        const habitInput = document.getElementById('habit-input');
+        const habitAddBtn = document.getElementById('habit-add-btn');
+        
+        let notesUnsub = null;
+        let todosUnsub = null;
+        let habitsUnsub = null;
+
+        const showTab = (tabId) => {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('bg-gray-200'));
+            document.getElementById(`tab-${tabId.replace('-content', '')}`).classList.add('bg-gray-200');
+        };
+
+        // Auth logic
+        authButton.addEventListener('click', async () => {
+            if (auth.currentUser) {
+                await signOut(auth);
+            } else {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            }
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                authButton.textContent = 'Sign Out';
+                mainContent.classList.remove('hidden');
+                statusText.textContent = `Welcome, ${user.displayName}!`;
+
+                // Set up real-time listeners for each section
+                setupNotesListener();
+                setupTodosListener();
+                setupHabitsListener();
+                showTab('notes-content');
+            } else {
+                userId = null;
+                authButton.textContent = 'Sign In with Google';
+                mainContent.classList.add('hidden');
+                statusText.textContent = 'Please sign in to access your data.';
+                if (notesUnsub) notesUnsub();
+                if (todosUnsub) todosUnsub();
+                if (habitsUnsub) habitsUnsub();
+            }
+        });
+
+        // Notes App Logic
+        const setupNotesListener = () => {
+            if (!userId) return;
+            const notesRef = collection(db, `users/${userId}/notes`);
+            notesUnsub = onSnapshot(notesRef, (snapshot) => {
+                notesList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const note = doc.data();
+                    const noteItem = document.createElement('div');
+                    noteItem.className = 'flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2';
+                    noteItem.innerHTML = `
+                        <span class="text-gray-800">${note.text}</span>
+                        <button class="delete-note-btn text-red-500 hover:text-red-700 transition-colors" data-id="${doc.id}">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    `;
+                    notesList.appendChild(noteItem);
+                });
+            });
+        };
+
+        noteAddBtn.addEventListener('click', async () => {
+            const noteText = noteInput.value.trim();
+            if (noteText && userId) {
+                await addDoc(collection(db, `users/${userId}/notes`), {
+                    text: noteText,
+                    createdAt: new Date()
+                });
+                noteInput.value = '';
+            }
+        });
+
+        notesList.addEventListener('click', async (e) => {
+            if (e.target.closest('.delete-note-btn')) {
+                const docId = e.target.closest('.delete-note-btn').dataset.id;
+                await deleteDoc(doc(db, `users/${userId}/notes`, docId));
+            }
+        });
+
+        // To-Do List App Logic
+        const setupTodosListener = () => {
+            if (!userId) return;
+            const todosRef = collection(db, `users/${userId}/todos`);
+            todosUnsub = onSnapshot(todosRef, (snapshot) => {
+                todoList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const todo = doc.data();
+                    const todoItem = document.createElement('div');
+                    todoItem.className = `flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-2 transition-opacity duration-300 ${todo.completed ? 'opacity-50' : ''}`;
+                    todoItem.innerHTML = `
+                        <div class="flex items-center">
+                            <input type="checkbox" class="todo-checkbox mr-2 h-4 w-4 text-blue-600 rounded" data-id="${doc.id}" ${todo.completed ? 'checked' : ''}>
+                            <span class="text-gray-800 ${todo.completed ? 'line-through' : ''}">${todo.text}</span>
+                        </div>
+                        <button class="delete-todo-btn text-red-500 hover:text-red-700 transition-colors" data-id="${doc.id}">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"></path></svg>
+                        </button>
+                    `;
+                    todoList.appendChild(todoItem);
+                });
+            });
+        };
+
+        todoAddBtn.addEventListener('click', async () => {
+            const todoText = todoInput.value.trim();
+            if (todoText && userId) {
+                await addDoc(collection(db, `users/${userId}/todos`), {
+                    text: todoText,
+                    completed: false,
+                    createdAt: new Date()
+                });
+                todoInput.value = '';
+            }
+        });
+
+        todoList.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.classList.contains('todo-checkbox')) {
+                const docId = target.dataset.id;
+                await updateDoc(doc(db, `users/${userId}/todos`, docId), {
+                    completed: target.checked
+                });
+            } else if (target.closest('.delete-todo-btn')) {
+                const docId = target.closest('.delete-todo-btn').dataset.id;
+                await deleteDoc(doc(db, `users/${userId}/todos`, docId));
+            }
+        });
+
+        // Habits App Logic
+        const setupHabitsListener = () => {
+            if (!userId) return;
+            const habitsRef = collection(db, `users/${userId}/habits`);
+            habitsUnsub = onSnapshot(habitsRef, (snapshot) => {
+                habitsGrid.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const habit = doc.data();
+                    const habitItem = document.createElement('div');
+                    habitItem.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col items-center';
+                    habitItem.innerHTML = `
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <span class="font-semibold text-gray-800">${habit.name}</span>
+                            <button class="delete-habit-btn text-red-500 hover:text-red-700 transition-colors" data-id="${doc.id}">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                        <div class="flex mt-2 justify-center w-full">
+                            ${Array.from({length: 7}, (_, i) => {
+                                const day = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][i];
+                                const isChecked = habit.history[i] || false;
+                                return `
+                                    <button class="habit-day-btn text-sm font-medium border rounded-md p-2 mx-1 transition-colors ${isChecked ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'}" data-habit-id="${doc.id}" data-day-index="${i}">
+                                        ${day}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    habitsGrid.appendChild(habitItem);
+                });
+            });
+        };
+
+        habitAddBtn.addEventListener('click', async () => {
+            const habitName = habitInput.value.trim();
+            if (habitName && userId) {
+                await addDoc(collection(db, `users/${userId}/habits`), {
+                    name: habitName,
+                    history: [false, false, false, false, false, false, false],
+                    createdAt: new Date()
+                });
+                habitInput.value = '';
+            }
+        });
+
+        habitsGrid.addEventListener('click', async (e) => {
+            const target = e.target;
+            if (target.classList.contains('habit-day-btn')) {
+                const habitId = target.dataset.habitId;
+                const dayIndex = parseInt(target.dataset.dayIndex, 10);
+                const habitDoc = await getDoc(doc(db, `users/${userId}/habits`, habitId));
+                if (habitDoc.exists()) {
+                    const currentHistory = habitDoc.data().history;
+                    currentHistory[dayIndex] = !currentHistory[dayIndex];
+                    await updateDoc(doc(db, `users/${userId}/habits`, habitId), {
+                        history: currentHistory
+                    });
+                }
+            } else if (target.closest('.delete-habit-btn')) {
+                const docId = target.closest('.delete-habit-btn').dataset.id;
+                await deleteDoc(doc(db, `users/${userId}/habits`, docId));
+            }
+        });
+    </script>
+
+    <!-- UI Elements -->
+    <div class="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-lg w-full max-w-2xl mb-6">
+        <h1 class="text-3xl font-bold mb-4 text-center text-gray-800">Daily Organizer</h1>
+        <p id="status-text" class="text-gray-600 mb-6 text-center">Please sign in to access your data.</p>
+        <button id="auth-button" class="bg-blue-600 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-md hover:bg-blue-700 transition-colors">
+            Sign In with Google
+        </button>
+    </div>
+
+    <!-- Main App Content (hidden until logged in) -->
+    <div id="main-content" class="hidden flex flex-col items-center w-full max-w-2xl">
+        
+        <!-- Tab Navigation -->
+        <div class="flex bg-gray-100 rounded-full p-1 mb-6 w-full justify-around">
+            <button id="tab-notes" class="tab-btn px-6 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('notes-content')">Notes</button>
+            <button id="tab-todo" class="tab-btn px-6 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('todo-content')">To-Do List</button>
+            <button id="tab-habits" class="tab-btn px-6 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors" onclick="showTab('habits-content')">Habits</button>
+        </div>
+
+        <!-- Notes App -->
+        <div id="notes-content" class="tab-content w-full">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Notes</h2>
+                <div class="flex space-x-2 mb-4">
+                    <input id="note-input" type="text" placeholder="Add a new note..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="note-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
+                </div>
+                <div id="notes-list" class="space-y-2">
+                    <!-- Notes will be dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- To-Do App -->
+        <div id="todo-content" class="tab-content w-full hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full">
+                <h2 class="text-2xl font-semibold mb-4 text-center">To-Do List</h2>
+                <div class="flex space-x-2 mb-4">
+                    <input id="todo-input" type="text" placeholder="Add a new task..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="todo-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
+                </div>
+                <div id="todo-list" class="space-y-2">
+                    <!-- To-dos will be dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Habits App -->
+        <div id="habits-content" class="tab-content w-full hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Habit Tracker</h2>
+                <div class="flex space-x-2 mb-4">
+                    <input id="habit-input" type="text" placeholder="Add a new habit..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="habit-add-btn" class="bg-blue-600 text-white p-3 rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Add</button>
+                </div>
+                <div id="habits-grid" class="space-y-4">
+                    <!-- Habits will be dynamically loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
