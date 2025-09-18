@@ -127,9 +127,15 @@
 
             if (id) {
                 // Detail view
-                mainContent.classList.add('hidden');
-                detailContent.classList.remove('hidden');
-                renderDetailView(base, id);
+                if (base === 'tool') {
+                    mainContent.classList.add('hidden');
+                    detailContent.classList.remove('hidden');
+                    renderToolView(id);
+                } else {
+                    mainContent.classList.add('hidden');
+                    detailContent.classList.remove('hidden');
+                    renderDetailView(base, id);
+                }
             } else {
                 // Tab view
                 mainContent.classList.remove('hidden');
@@ -146,6 +152,9 @@
                         break;
                     case 'calendar':
                         showTab('calendar-content');
+                        break;
+                    case 'tools':
+                        showTab('tools-content');
                         break;
                     default:
                         // Handle unknown path, redirect to notes
@@ -276,6 +285,25 @@
             }
         };
 
+        const renderToolView = (toolName) => {
+            const detailView = document.getElementById('detail-content');
+            detailView.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl flex flex-col items-center">
+                    <button id="back-to-tools-btn" class="self-start text-gray-500 hover:text-gray-700 transition-colors mb-4">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <h2 class="text-2xl font-semibold mb-4 capitalize">${toolName}</h2>
+                    <div id="tool-container" class="w-full text-center">
+                        <p class="text-gray-500">This is the content for the ${toolName} tool.</p>
+                        <!-- Tool-specific content will go here -->
+                    </div>
+                </div>
+            `;
+            document.getElementById('back-to-tools-btn').addEventListener('click', () => {
+                navigate('/tools');
+            });
+        };
+
         // Auth logic
         authButton.addEventListener('click', async () => {
             if (auth.currentUser) {
@@ -329,6 +357,7 @@
         document.getElementById('tab-todo').addEventListener('click', () => navigate('/todos'));
         document.getElementById('tab-habits').addEventListener('click', () => navigate('/habits'));
         document.getElementById('tab-calendar').addEventListener('click', () => navigate('/calendar'));
+        document.getElementById('tab-tools').addEventListener('click', () => navigate('/tools'));
 
         // Notes App Logic with Archiving
         const setupNotesListener = () => {
@@ -665,6 +694,7 @@
             <button id="tab-todo" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">To-Do List</button>
             <button id="tab-habits" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Habits</button>
             <button id="tab-calendar" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Calendar</button>
+            <button id="tab-tools" class="tab-btn px-4 py-2 rounded-full font-medium text-gray-800 hover:bg-gray-200 transition-colors">Tools</button>
         </div>
 
         <!-- Notes App -->
@@ -747,6 +777,32 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tools App -->
+        <div id="tools-content" class="tab-content w-full hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6 w-full">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Tools</h2>
+                <p class="text-center text-gray-600 mb-6">Select a tool to use it.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <a href="/tool/calculator" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition-colors">
+                        <svg class="w-10 h-10 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v2a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm2 4a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm3 5a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm-3 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800">Calculator</span>
+                    </a>
+                    <a href="/tool/stop-watch" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition-colors">
+                        <svg class="w-10 h-10 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 10a5 5 0 1110 0 5 5 0 01-10 0zM8 8a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800">Stop Watch</span>
+                    </a>
+                    <a href="/tool/currency-converter" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition-colors">
+                        <svg class="w-10 h-10 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800 text-center">Currency Converter</span>
+                    </a>
+                    <a href="/tool/unit-converter" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition-colors">
+                        <svg class="w-10 h-10 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM6 10a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zM8 12a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        <span class="font-medium text-gray-800 text-center">Unit Converter</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Detail View (hidden initially) -->
@@ -755,3 +811,4 @@
 
 </body>
 </html>
+
